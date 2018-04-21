@@ -34,6 +34,10 @@ class ChessCanvas extends Component {
   clear = () => {
     this.context.clearRect(-0.5, -0.5, this.canvas.width, this.canvas.height);
   }
+  reset = () => {
+    this.clear();
+    this.drawGrid();
+  }
   drawGrid = () => {
     const context = this.context;
     context.save();

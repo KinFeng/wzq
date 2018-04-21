@@ -22,6 +22,7 @@ const Directions = [
   { x: -1, y: 1, name: 'topRight' },
 ];
 
+const isMobile = /Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent);
 
 export default {
   rowWinSize,
@@ -35,4 +36,5 @@ export default {
   ColorEnum,
   Messages,
   Directions,
+  isMobile,
 };

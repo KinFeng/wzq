@@ -13,6 +13,7 @@ import _extend from 'lodash/extend';
 import setting from './setting';
 
 const {
+  isMobile,
   rowWinSize,
   totalDots,
   boxWidth,
@@ -65,7 +66,11 @@ class ChessView extends Component {
   reset = () => {
     const { selected } = this.state;
     this.setState(getDefaultState());
-    this.setState({ selected });
+    this.setState({ selected }, ()=>{
+      if(selected === 1 && this.chessCanvas !== undefined) {
+        this.chessCanvas.reset();
+      }
+    });
   }
   undo = () => {
     const { chessIndex, prevChess, chesses, chessTable } = this.state;
@@ -90,7 +95,7 @@ class ChessView extends Component {
   }
   down = ({ nativeEvent }) => {
     if (this.state.finished) {
-      alert('本局已结束，请重新开始')
+      this.showMessage('本局已结束，请重新开始')
       return;
     }
 
@@ -143,11 +148,17 @@ class ChessView extends Component {
       clientX: parseInt(changedTouches[0].clientX) - 30,
       clientY: parseInt(changedTouches[0].clientY) - 30,
     };
+    
     this.down({ nativeEvent });
   } 
   getCurrentColor = () => this.getColor(this.state.chessIndex)
   getColor = (index) => (this.state.colors[index & 1])
   isValidDot = ({ left, top }) => {
+
+    if(left < -3 || top < -3 ) {
+      return false;
+    }
+
     const { currentChess, chesses } = this.state;
     return !chesses.some(chessItem =>
       currentChess !== chessItem && (chessItem.left === left && chessItem.top === top));
@@ -170,20 +181,25 @@ class ChessView extends Component {
 
       const isWin = row.length >= rowWinSize;
       if (isWin) {
-        alert(`${Messages[chess.color]}胜出`);
-        this.setState({ finished: true });
+        this.setState({ finished: true, winner: chess.color }, ()=>{
+          this.showMessage(`${Messages[chess.color]}胜出`);
+        });
         return true;
       }
     }
 
     // 检查结束
     if (chesses.length >= totalDots) {
-      alert('游戏结束，和局');
-      this.setState({ finished: true });
+      this.setState({ finished: true }, ()=>{
+        this.showMessage('游戏结束，和局');
+      });
       return true;
     }
 
     return false;
+  }
+  showMessage = (content) => {
+    setTimeout(()=>{alert(content);}, 100);
   }
   countUpChess = ({ direction, direction: { x, y }, row, chess }) => {
     const dot = { dotX: chess.dotX + x, dotY: chess.dotY + y };
@@ -208,8 +224,8 @@ class ChessView extends Component {
     const { offsetLeft, offsetTop } = this.chessBoard;
     const x1 = clientX - (clientX % boxWidth);
     const y1 = clientY - (clientY % boxWidth);
-    const fixX = (/Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent)) ? 0 : 6;
-    const fixY = (/Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent)) ? 0 : 0;
+    const fixX = isMobile ? 2 : 6;
+    const fixY = isMobile ? 2 : 2;
     const left = x1 - offsetLeft + fixX;
     const top = y1 - offsetTop + fixY;
     const dotX = x1 / boxWidth;
@@ -221,13 +237,17 @@ class ChessView extends Component {
   }
   render() {
     const { classes } = this.props;
-    const { selected, currentChess, finished } = this.state;
+    const { selected, currentChess, finished, winner } = this.state;
     return (
       <div className={classes.root}>
+        <div>
+          <Button variant="raised" className={classes.button} disabled={selected === 0} onTouchTap={() => { this.switch(0); }}>使用 Dom</Button>
+          <Button variant="raised" className={classes.button} disabled={selected === 1} onTouchTap={() => { this.switch(1); }}>使用 Canvas</Button>
+        </div>
         <div
            className="board-wrap"
-           onMouseDown={this.down}
-           onMouseMove={this.move}
+           onMouseDown={!isMobile && this.down}
+           onMouseMove={!isMobile && this.move}
            onTouchStart={this.touchStart}
            onTouchMove={this.touchMove}
            onTouchEnd={this.touchEnd}
@@ -236,18 +256,15 @@ class ChessView extends Component {
         { selected === 0 ?
           <ChessDom { ...this.state } />
           :
-          <ChessCanvas { ...this.state } /> }
+          <ChessCanvas ref={node => { this.chessCanvas = node; }} { ...this.state } /> }
         </div>
         <div className="bottom-bar">
-          <Button variant="raised" className={classes.button} disabled={selected === 0} onTouchTap={() => { this.switch(0); }}>使用Dom</Button>
-          <Button variant="raised" className={classes.button} disabled={selected === 1} onTouchTap={() => { this.switch(1); }}>使用Canvas</Button>
-          <br />
-          <Button variant="raised" className={classes.button} onTouchTap={() => { this.reset(); }}>重新开始</Button>
+          <Button variant="raised" color="secondary" className={classes.button} onTouchTap={() => { this.reset(); }}>重新开始</Button>
           <Button variant="raised" color="primary" className={classes.button} onTouchTap={() => { this.undo(); }}>悔棋</Button>
 
           <div style={{marginLeft: 20, display: 'inline-block'}}> 
             { finished === true ? 
-              <span>本局结束</span>
+              <span>本局结束, {Messages[winner]}胜出</span>
               :
               <span>当前玩家: {Messages[currentChess.color]} 
                 <span className={classnames('chess-sample', currentChess.color)} />
