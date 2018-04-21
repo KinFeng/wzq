@@ -5,7 +5,6 @@ import setting from './setting';
 const {
   numDots,
   boxWidth,
-  boardWidth,
   chessWidth,
   gridPadding,
   gridWidth,
@@ -63,27 +62,11 @@ class ChessCanvas extends Component {
     const context = this.context;
     context.save();
 
-    const white = context.createRadialGradient(75, 50, 5, 90, 60, 100);
-    white.addColorStop(0, '#ffffff');
-    white.addColorStop(1, '#eeeeee');
-
-    const black = context.createRadialGradient(75, 50, 5, 90, 60, 100);
-    black.addColorStop(0, '#ffffff');
-    black.addColorStop(1, '#000000');
-
-    const whiteAlpha = context.createRadialGradient(75, 50, 5, 90, 60, 100);
-    whiteAlpha.addColorStop(0, 'rgba(255,255,255,0.5)');
-    whiteAlpha.addColorStop(1, 'rgba(238,238,238,0.5)');
-
-    const blackAlpha = context.createRadialGradient(75, 50, 5, 90, 60, 100);
-    blackAlpha.addColorStop(0, 'rgba(255,255,255,0.5)');
-    blackAlpha.addColorStop(1, 'rgba(0,0,0,0.5)');
-
     const colorsMap = {
-      white,
-      whiteAlpha,
-      black,
-      blackAlpha,
+      white: '#eee',
+      whiteAlpha: 'rgba(255,255,255,0.5)',
+      black: '#111',
+      blackAlpha: 'rgba(0,0,0,0.5)',
     };
 
     allChesses.map(({ left, top, color, done }) => {

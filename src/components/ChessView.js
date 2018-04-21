@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
+import classnames from 'classnames';
 import PropTypes from 'prop-types';
 import { withStyles } from 'material-ui/styles';
 import Paper from 'material-ui/Paper';
 import Grid from 'material-ui/Grid';
 import Button from 'material-ui/Button';
-import ChessPanel from './ChessPanel';
+import ChessDom from './ChessDom';
 import ChessCanvas from './ChessCanvas';
 
 import _random from 'lodash/random';
@@ -15,7 +16,6 @@ const {
   rowWinSize,
   totalDots,
   boxWidth,
-  coordFix,
   ColorEnum,
   Messages,
   Directions,
@@ -30,7 +30,7 @@ const getDefaultState = () => {
   const color = colors[0];
   const currentChess = newChess({ index: 0, color });
   const state = {
-    selected: 1,
+    selected: 0,
     finished: false,
     chessIndex: 0,
     firstColor: color,
@@ -60,7 +60,7 @@ const styles = theme => ({
   },
 });
 
-class Home extends Component {
+class ChessView extends Component {
   state = getDefaultState();
   reset = () => {
     const { selected } = this.state;
@@ -128,6 +128,23 @@ class Home extends Component {
     currentChess.top = top;
     this.setState({ currentChess });
   }
+  touchStart = (e) => {
+    this.move(e);
+  }
+  touchMove = ({ nativeEvent:{changedTouches} }) => {
+    const nativeEvent = { 
+      clientX: parseInt(changedTouches[0].clientX) - 30,
+      clientY: parseInt(changedTouches[0].clientY) - 30,
+    };
+    this.move({ nativeEvent });
+  }
+  touchEnd = ({ nativeEvent:{changedTouches} }) => {
+    const nativeEvent = { 
+      clientX: parseInt(changedTouches[0].clientX) - 30,
+      clientY: parseInt(changedTouches[0].clientY) - 30,
+    };
+    this.down({ nativeEvent });
+  } 
   getCurrentColor = () => this.getColor(this.state.chessIndex)
   getColor = (index) => (this.state.colors[index & 1])
   isValidDot = ({ left, top }) => {
@@ -191,8 +208,10 @@ class Home extends Component {
     const { offsetLeft, offsetTop } = this.chessBoard;
     const x1 = clientX - (clientX % boxWidth);
     const y1 = clientY - (clientY % boxWidth);
-    const left = x1 + coordFix - offsetLeft;
-    const top = y1 - offsetTop - 1;
+    const fixX = (/Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent)) ? 0 : 6;
+    const fixY = (/Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent)) ? 0 : 0;
+    const left = x1 - offsetLeft + fixX;
+    const top = y1 - offsetTop + fixY;
     const dotX = x1 / boxWidth;
     const dotY = y1 / boxWidth;
     return { left, top, dotX, dotY };
@@ -209,10 +228,13 @@ class Home extends Component {
            className="board-wrap"
            onMouseDown={this.down}
            onMouseMove={this.move}
+           onTouchStart={this.touchStart}
+           onTouchMove={this.touchMove}
+           onTouchEnd={this.touchEnd}
            ref={node => {this.chessBoard = node}}
         >
         { selected === 0 ?
-          <ChessPanel { ...this.state } />
+          <ChessDom { ...this.state } />
           :
           <ChessCanvas { ...this.state } /> }
         </div>
@@ -220,14 +242,16 @@ class Home extends Component {
           <Button variant="raised" className={classes.button} disabled={selected === 0} onTouchTap={() => { this.switch(0); }}>使用Dom</Button>
           <Button variant="raised" className={classes.button} disabled={selected === 1} onTouchTap={() => { this.switch(1); }}>使用Canvas</Button>
           <br />
-          <Button variant="raised" color="primary" className={classes.button} onTouchTap={() => { this.undo(); }}>悔棋</Button>
           <Button variant="raised" className={classes.button} onTouchTap={() => { this.reset(); }}>重新开始</Button>
+          <Button variant="raised" color="primary" className={classes.button} onTouchTap={() => { this.undo(); }}>悔棋</Button>
 
           <div style={{marginLeft: 20, display: 'inline-block'}}> 
             { finished === true ? 
               <span>本局结束</span>
               :
-              <span>当前玩家: {Messages[currentChess.color]}</span>
+              <span>当前玩家: {Messages[currentChess.color]} 
+                <span className={classnames('chess-sample', currentChess.color)} />
+              </span>
             }
           </div>
           <div />
@@ -237,8 +261,8 @@ class Home extends Component {
   }
 }
 
-Home.propTypes = {
+ChessView.propTypes = {
   classes: PropTypes.object.isRequired,
 };
 
-export default withStyles(styles)(Home);
+export default withStyles(styles)(ChessView);

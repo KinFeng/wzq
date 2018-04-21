@@ -7,7 +7,6 @@ const gridPadding = 10;
 const boardWidth = gridWidth + gridPadding * 2;
 const chessWidth = 16;
 
-const coordFix = 4;
 const ColorEnum = {
   white: 'white',
   black: 'black',
@@ -33,7 +32,6 @@ export default {
   gridWidth,
   gridPadding,
   boardWidth,
-  coordFix,
   ColorEnum,
   Messages,
   Directions,
