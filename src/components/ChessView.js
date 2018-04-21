@@ -23,6 +23,7 @@ const {
 } = setting;
 
 const newChess = params => ({ left: -999, top: -999, color: ColorEnum.white, done: false, ...params });
+const dotKey = ({ dotX, dotY })=>(`${dotX}_${dotY}`);
 
 const getDefaultState = () => {
   const ranNum = _random(0, 1);
@@ -37,6 +38,7 @@ const getDefaultState = () => {
     firstColor: color,
     colors,
     chesses: [],
+    redoChesses: [],
     chessTable: {},
     prevChess: null,
     currentChess,
@@ -73,18 +75,19 @@ class ChessView extends Component {
     });
   }
   undo = () => {
-    const { chessIndex, prevChess, chesses, chessTable } = this.state;
+    const { chessIndex, prevChess, chesses, redoChesses, chessTable } = this.state;
 
     if (chessIndex === 0) {
+        this.showMessage('没有棋步可以撤销了');
       return;
     }
 
     // 从chessTable中删除
-    const { dotX, dotY } = prevChess;
-    delete chessTable[`${dotX}_${dotY}`];
+    delete chessTable[dotKey(prevChess)];
 
     // 从chesses中删除
-    chesses.length -= 1;
+    const undoChess = chesses.pop();
+    redoChesses.push(undoChess);
 
     const index = chessIndex - 1;
     const color = this.getColor(index);
@@ -93,34 +96,58 @@ class ChessView extends Component {
     const oldPrevChess = chesses[chesses.length - 1];
     this.setState({ currentChess: chess, chessIndex: index, prevChess: oldPrevChess, finished: false });
   }
+  redo = () => {
+    const { redoChesses } = this.state;
+
+    if(redoChesses.length === 0) {
+      this.showMessage('没有棋步可以恢复了');
+      return;
+    }
+
+    const chess = redoChesses.pop();
+
+    this.doChess(chess);
+  }
   down = ({ nativeEvent }) => {
     if (this.state.finished) {
       this.showMessage('本局已结束，请重新开始')
       return;
     }
 
-    const { chessIndex, currentChess, colors, chesses, chessTable } = this.state;
+    const { currentChess, redoChesses } = this.state;
     const pos = this.calcCoord(nativeEvent);
-
     if (!this.isValidDot(pos)) {
       return;
     }
 
     // 确认下棋位置
     _extend(currentChess, pos, { done: true });
-    chesses.push(currentChess);
+    
+    this.doChess(currentChess);
 
-    this.checkWinning();
+    // 新的操作，清空原有redo记录
+    redoChesses.length = 0;
+  }
+  doChess = (chess) => {
+    const { chessIndex, chesses, colors, chessTable, redoChesses  } = this.state;
+
+    if(chess.index !== chessIndex ) {
+      console.log(chess, this.state);
+      return;
+    }
+
+    chesses.push(chess);
+
+    this.checkWinning(chess);
 
     const nextIndex = chessIndex + 1;
     const nextColor = colors[nextIndex & 1];
-    const nextChess = newChess({ color: nextColor });
+    const nextChess = newChess({ color: nextColor, index: nextIndex });
 
     // 保存到chessTable
-    const { dotX, dotY } = currentChess;
-    chessTable[`${dotX}_${dotY}`] = currentChess;
+    chessTable[dotKey(chess)] = chess;
 
-    const prevChess = currentChess;
+    const prevChess = chess;
     this.setState({ prevChess, currentChess: nextChess, chessIndex: nextIndex });
   }
   move = ({ nativeEvent }) => {
@@ -163,17 +190,16 @@ class ChessView extends Component {
     return !chesses.some(chessItem =>
       currentChess !== chessItem && (chessItem.left === left && chessItem.top === top));
   }
-  checkWinning = () => {
-    const { currentChess, chesses } = this.state;
+  checkWinning = (chess) => {
+    const { chesses } = this.state;
 
     // 数量未达到，不需要检查
     if (chesses.length / 2 < rowWinSize - 1) {
       return false;
     }
 
-    const chess = currentChess;
     for (const direction of Directions) {
-      const row = [currentChess];
+      const row = [chess];
       // 从后方检查
       this.countUpChess({ direction, row, chess });
       // 从前方检查
@@ -217,8 +243,8 @@ class ChessView extends Component {
       this.countDownChess({ direction, row, chess: downChess });
     }
   }
-  getChessByDot = ({ dotX, dotY }) => {
-    return this.state.chessTable[`${dotX}_${dotY}`];
+  getChessByDot = (dot) => {
+    return this.state.chessTable[dotKey(dot)];
   }
   calcCoord = ({ clientX, clientY }) => {
     const { offsetLeft, offsetTop } = this.chessBoard;
@@ -243,6 +269,16 @@ class ChessView extends Component {
         <div>
           <Button variant="raised" className={classes.button} disabled={selected === 0} onTouchTap={() => { this.switch(0); }}>使用 Dom</Button>
           <Button variant="raised" className={classes.button} disabled={selected === 1} onTouchTap={() => { this.switch(1); }}>使用 Canvas</Button>
+        
+          <div style={{marginLeft: 20, display: 'inline-block'}}> 
+            { finished === true ? 
+              <span>本局结束, {Messages[winner]}胜出</span>
+              :
+              <span>当前玩家: {Messages[currentChess.color]} 
+                <span className={classnames('chess-sample', currentChess.color)} />
+              </span>
+            }
+          </div>
         </div>
         <div
            className="board-wrap"
@@ -261,16 +297,7 @@ class ChessView extends Component {
         <div className="bottom-bar">
           <Button variant="raised" color="secondary" className={classes.button} onTouchTap={() => { this.reset(); }}>重新开始</Button>
           <Button variant="raised" color="primary" className={classes.button} onTouchTap={() => { this.undo(); }}>悔棋</Button>
-
-          <div style={{marginLeft: 20, display: 'inline-block'}}> 
-            { finished === true ? 
-              <span>本局结束, {Messages[winner]}胜出</span>
-              :
-              <span>当前玩家: {Messages[currentChess.color]} 
-                <span className={classnames('chess-sample', currentChess.color)} />
-              </span>
-            }
-          </div>
+          <Button variant="raised" color="primary" className={classes.button} onTouchTap={() => { this.redo(); }}>撤销悔棋</Button>
           <div />
         </div>
       </div>
