@@ -30,7 +30,7 @@ const getDefaultState = () => {
   const color = colors[0];
   const currentChess = newChess({ index: 0, color });
   const state = {
-    selected: 0,
+    selected: 1,
     finished: false,
     chessIndex: 0,
     firstColor: color,
@@ -90,6 +90,7 @@ class Home extends Component {
   }
   down = ({ nativeEvent }) => {
     if (this.state.finished) {
+      alert('本局已结束，请重新开始')
       return;
     }
 
@@ -138,7 +139,7 @@ class Home extends Component {
     const { currentChess, chesses } = this.state;
 
     // 数量未达到，不需要检查
-    if (chesses.length / 2 < rowWinSize) {
+    if (chesses.length / 2 < rowWinSize - 1) {
       return false;
     }
 
@@ -191,7 +192,7 @@ class Home extends Component {
     const x1 = clientX - (clientX % boxWidth);
     const y1 = clientY - (clientY % boxWidth);
     const left = x1 + coordFix - offsetLeft;
-    const top = y1 - offsetTop;
+    const top = y1 - offsetTop - 1;
     const dotX = x1 / boxWidth;
     const dotY = y1 / boxWidth;
     return { left, top, dotX, dotY };

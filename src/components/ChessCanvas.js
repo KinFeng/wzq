@@ -8,15 +8,17 @@ const {
   boardWidth,
   chessWidth,
   gridPadding,
+  gridWidth,
 } = setting;
 
-const chessRadius = chessWidth / 2;
+const chessRadius = chessWidth / 2 + 1;
 const PI2 = Math.PI * 2;
 
 class ChessCanvas extends Component {
   componentDidMount() {
     const canvas = this.canvas;
     this.context = canvas.getContext('2d');
+    this.context.translate(0.5, 0.5);
     this.renderCanvas();
   }
   shouldComponentUpdate() {
@@ -31,7 +33,7 @@ class ChessCanvas extends Component {
     this.drawChesses();
   }
   clear = () => {
-    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.context.clearRect(-0.5, -0.5, this.canvas.width, this.canvas.height);
   }
   drawGrid = () => {
     const context = this.context;
@@ -39,16 +41,16 @@ class ChessCanvas extends Component {
     context.lineWidth = 1;
     context.strokeStyle = '#000';
     for (let i = 0; i < numDots; i += 1) {
-      const y = (boxWidth + 0.5) * i + gridPadding;
+      const y = boxWidth * i + gridPadding;
       context.beginPath();
-      context.moveTo(gridPadding + 0.5, y);
-      context.lineTo(boardWidth, y);
+      context.moveTo(gridPadding, y);
+      context.lineTo(gridPadding + gridWidth, y);
       context.stroke();
 
-      const x = (boxWidth + 0.5) * i + gridPadding;
+      const x = boxWidth * i + gridPadding;
       context.beginPath();
-      context.moveTo(x, gridPadding + 0.5);
-      context.lineTo(x, boardWidth);
+      context.moveTo(x, gridPadding);
+      context.lineTo(x, gridPadding + gridWidth);
       context.stroke();
     }
 
@@ -61,33 +63,34 @@ class ChessCanvas extends Component {
     const context = this.context;
     context.save();
 
-    const whiteColor = context.createRadialGradient(75, 50, 5, 90, 60, 100);
-    whiteColor.addColorStop(0, '#ffffff');
-    whiteColor.addColorStop(1, '#eeeeee');
+    const white = context.createRadialGradient(75, 50, 5, 90, 60, 100);
+    white.addColorStop(0, '#ffffff');
+    white.addColorStop(1, '#eeeeee');
 
-    const blackColor = context.createRadialGradient(75, 50, 5, 90, 60, 100);
-    blackColor.addColorStop(0, '#ffffff');
-    blackColor.addColorStop(1, '#000000');
+    const black = context.createRadialGradient(75, 50, 5, 90, 60, 100);
+    black.addColorStop(0, '#ffffff');
+    black.addColorStop(1, '#000000');
 
-    const whiteColor2 = context.createRadialGradient(75, 50, 5, 90, 60, 100);
-    whiteColor2.addColorStop(0, 'rgba(255,255,255,0.5)');
-    whiteColor2.addColorStop(1, 'rgba(238,238,238,0.5)');
+    const whiteAlpha = context.createRadialGradient(75, 50, 5, 90, 60, 100);
+    whiteAlpha.addColorStop(0, 'rgba(255,255,255,0.5)');
+    whiteAlpha.addColorStop(1, 'rgba(238,238,238,0.5)');
 
-    const blackColor2 = context.createRadialGradient(75, 50, 5, 90, 60, 100);
-    blackColor2.addColorStop(0, 'rgba(255,255,255,0.5)');
-    blackColor2.addColorStop(1, 'rgba(0,0,0,0.5)');
+    const blackAlpha = context.createRadialGradient(75, 50, 5, 90, 60, 100);
+    blackAlpha.addColorStop(0, 'rgba(255,255,255,0.5)');
+    blackAlpha.addColorStop(1, 'rgba(0,0,0,0.5)');
 
     const colorsMap = {
-      white: whiteColor,
-      white2: whiteColor2,
-      black: blackColor,
-      black2: blackColor2,
+      white,
+      whiteAlpha,
+      black,
+      blackAlpha,
     };
 
     allChesses.map(({ left, top, color, done }) => {
-      context.fillStyle = colorsMap[color];
+      context.fillStyle = colorsMap[`${color}${done ? '' : 'Alpha'}`];
+      context.strokeStyle = color;
       context.beginPath();
-      context.arc(left, top, chessRadius, 0, PI2, false);
+      context.arc(left + chessRadius, top + chessRadius, chessRadius, 0, PI2, false);
       context.stroke();
       context.fill();
     });
