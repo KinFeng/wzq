@@ -4,13 +4,14 @@ import { withStyles } from 'material-ui/styles';
 import Paper from 'material-ui/Paper';
 import Grid from 'material-ui/Grid';
 import Button from 'material-ui/Button';
+import ChessPanel from './ChessPanel';
 
 const styles = theme => ({
   root: {
     flexGrow: 1,
   },
   wrap: {
-    width: 800,
+    width: 200,
   },
   button: {
     margin: theme.spacing.unit,
@@ -32,18 +33,13 @@ class Home extends Component {
 
   render() {
     const { classes } = this.props;
-
     return (
       <div className={classes.root}>
-        <Grid container spacing={24} justify="center">
-          <Grid item xs={6} sm={12}>
-            <Paper className={classes.paper}>content</Paper>
-          </Grid>
-          <Grid item xs={6} sm={12}>
-            <Button variant="raised" color="secondary" className={classes.button} onTouchTap={() => { console.log('reset') }}>重置</Button>
-            <Button variant="raised" color="primary" className={classes.button} onTouchTap={() => { console.log('undo') }}>悔棋</Button>
-          </Grid>
-        </Grid>
+        <ChessPanel ref={node => {this.chessPanel = node} } />
+        <div>
+          <Button variant="raised" className={classes.button} onTouchTap={() => { this.chessPanel.reset(); }}>重置</Button>
+          <Button variant="raised" color="primary" className={classes.button} onTouchTap={() => { this.chessPanel.undo(); }}>悔棋</Button>
+        </div>
       </div>
     );
   }
