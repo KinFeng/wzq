@@ -13,7 +13,7 @@ body {
     margin: 30px;
 }
 
-.board {
+.chess-board {
     width: $w;
     height: $w;
     background: #dba647;
@@ -69,4 +69,20 @@ body {
     // background-repeat: no-repeat;
     overflow: hidden;
     box-sizing: border-box;
+}
+
+.board-wrap {
+    background: #dba647;
+    width: 440px;
+    height: 440px;
+    overflow: hidden;
+    border: 1px solid #000;
+    box-sizing: content-box;
+}
+.board-canvas {
+    width: 440px;
+    height: 440px;
+}
+.bottom-bar {
+    margin-top: 10px;
 }
